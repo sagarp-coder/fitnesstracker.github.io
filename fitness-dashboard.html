@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Sagar's Fitness Dashboard 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0c10;--surface:#13161d;--surface2:#1c2028;--border:#252830;
+  --accent:#e8ff47;--orange:#f97316;--blue:#38bdf8;--purple:#a78bfa;--green:#4ade80;
+  --text:#e8eaf0;--muted:#6b7280;--muted2:#9ca3af;
+  --r:8px;--r2:12px;--gap:12px;--p:16px;--pp:24px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:999}
+
+/* Header */
+header{padding:24px var(--gap) 18px;border-bottom:1px solid var(--border)}
+.hdr-inner{max-width:1100px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(36px,10vw,80px);line-height:.92;letter-spacing:.02em}
+h1 em{color:var(--accent);font-style:normal}
+.hdr-meta{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);line-height:1.8;text-align:right}
+
+/* Stat strip */
+.stat-strip{display:grid;grid-template-columns:repeat(2,1fr);border-bottom:1px solid var(--border)}
+@media(min-width:600px){.stat-strip{grid-template-columns:repeat(4,1fr)}}
+.stat-item{padding:18px var(--p);border-right:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;overflow:hidden;opacity:0;transform:translateY(8px);transition:opacity .4s ease,transform .4s ease,background .2s}
+.stat-item:hover{background:var(--surface)}
+.stat-item.visible{opacity:1;transform:translateY(0)}
+.stat-strip .stat-item:nth-child(2n){border-right:none}
+@media(min-width:600px){
+  .stat-strip .stat-item:nth-child(2n){border-right:1px solid var(--border)}
+  .stat-strip .stat-item:nth-child(4n){border-right:none}
+  .stat-strip .stat-item{border-bottom:none}
+}
+.stat-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:clamp(34px,8vw,52px);line-height:1}
+.stat-unit{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px}
+.stat-bar{position:absolute;bottom:0;left:0;height:2px;transition:width 1.4s cubic-bezier(.16,1,.3,1)}
+
+/* Content grid */
+.content{max-width:1100px;margin:0 auto;padding:var(--gap);display:flex;flex-direction:column;gap:var(--gap)}
+.row-2{display:grid;grid-template-columns:1fr;gap:var(--gap)}
+@media(min-width:700px){.row-2{grid-template-columns:1fr 1fr}}
+@media(min-width:900px){.row-2.asym{grid-template-columns:3fr 2fr}}
+
+/* Panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:var(--p);opacity:0;transform:translateY(12px);transition:opacity .5s ease,transform .5s ease,border-color .2s}
+.panel:hover{border-color:rgba(232,255,71,.2)}
+.panel.visible{opacity:1;transform:translateY(0)}
+@media(min-width:600px){.panel{padding:var(--pp)}}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:8px;flex-wrap:wrap}
+.panel-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.06em;color:var(--muted2)}
+.panel-tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--surface2);padding:3px 7px;border-radius:3px;white-space:nowrap}
+
+/* Goal ring panel */
+.goal-inner{display:flex;flex-direction:column;gap:20px;align-items:center}
+@media(min-width:440px){.goal-inner{flex-direction:row;align-items:center;gap:24px}}
+.ring-wrap{position:relative;flex-shrink:0}
+.ring-lbl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-pct{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--accent);line-height:1}
+.ring-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.1em;margin-top:2px}
+.goal-rows{flex:1;width:100%}
+.goal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.goal-row:last-child{border-bottom:none}
+.gr-name{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.gr-val{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text)}
+
+/* Heatmap */
+.heatmap-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+.heatmap-month{margin-bottom:16px}
+.hm-month-name{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.hm-row{display:flex;gap:3px;flex-wrap:wrap}
+@media(min-width:480px){.hm-row{flex-wrap:nowrap;gap:4px}}
+.hm-cell{width:18px;height:18px;border-radius:3px;flex-shrink:0;cursor:default;transition:transform .1s;-webkit-tap-highlight-color:transparent}
+@media(min-width:480px){.hm-cell{width:22px;height:22px}}
+@media(hover:hover){.hm-cell:hover{transform:scale(1.4);z-index:10;position:relative}}
+.hm-empty{background:var(--surface2);opacity:.25}
+.hm-rest{background:var(--surface2);border:1px solid var(--border)}
+.hm-walk{background:rgba(56,189,248,.3)}
+.hm-lift{background:rgba(167,139,250,.55)}
+.hm-run1{background:rgba(232,255,71,.35)}
+.hm-run2{background:rgba(232,255,71,.6)}
+.hm-run3{background:rgba(232,255,71,.88);box-shadow:0 0 5px rgba(232,255,71,.3)}
+.hm-both{background:linear-gradient(135deg,rgba(232,255,71,.8) 50%,rgba(167,139,250,.8) 50%)}
+.hm-legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:14px}
+.hm-leg-item{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.hm-leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* Exercise bars */
+.ex-list{display:flex;flex-direction:column;gap:10px}
+.ex-row{display:flex;align-items:center;gap:8px}
+.ex-name{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto;width:min(150px,38vw)}
+.ex-bar-wrap{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;min-width:0}
+.ex-bar{height:100%;border-radius:3px;width:0;transition:width 1.2s cubic-bezier(.16,1,.3,1)}
+.ex-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);flex-shrink:0;width:30px;text-align:right}
+
+/* Pace pill */
+.pace-pill{display:inline-flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:5px 14px 5px 8px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:16px;flex-wrap:wrap}
+.pace-dot{width:7px;height:7px;border-radius:50%;background:var(--orange);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+
+/* Plan table */
+.plan-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.plan{width:100%;min-width:400px;border-collapse:collapse;font-size:13px}
+table.plan th{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;font-weight:500}
+table.plan td{padding:9px 10px;border-bottom:1px solid rgba(37,40,48,.5);color:var(--muted2);vertical-align:middle}
+table.plan tr:last-child td{border-bottom:none}
+table.plan tr:hover td{background:rgba(232,255,71,.03)}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:600;letter-spacing:.04em;white-space:nowrap}
+.b-done{background:rgba(74,222,128,.12);color:var(--green)}
+.b-ramp{background:rgba(251,191,36,.12);color:#fbbf24}
+.b-full{background:rgba(232,255,71,.1);color:var(--accent)}
+.b-cap{background:rgba(56,189,248,.1);color:var(--blue)}
+.mini-bar-wrap{display:flex;align-items:center;gap:8px;min-width:0}
+.mini-bar{height:3px;border-radius:99px;background:var(--surface2);width:55px;flex-shrink:0;overflow:hidden}
+.mini-bar-fill{height:100%;border-radius:99px}
+
+/* Footer */
+footer{border-top:1px solid var(--border);padding:18px var(--gap);text-align:center}
+.foot-inner{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:4px;align-items:center}
+@media(min-width:600px){.foot-inner{flex-direction:row;justify-content:space-between}}
+footer span{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+footer .fa{color:var(--accent)}
+
+/* Desktop tooltip */
+.tt{position:fixed;background:var(--surface2);border:1px solid var(--border);padding:5px 10px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text);pointer-events:none;z-index:9998;display:none;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="tt" id="tt"></div>
+
+<header>
+  <div class="hdr-inner">
+    <div>
+      <h1>FITNESS<br/><em>DASHBOARD</em></h1>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:6px">// 2026 Season &nbsp;·&nbsp; 1,000 Mile Challenge</div>
+    </div>
+    <div class="hdr-meta">Last updated<br/><span style="color:var(--accent)">March 9, 2026</span><br/>Sagar Patel</div>
+  </div>
+</header>
+
+<div class="stat-strip">
+  <div class="stat-item">
+    <div class="stat-label">Miles Run · 2026</div>
+    <div class="stat-val" style="color:var(--accent)">113.8</div>
+    <div class="stat-unit">of 1,000 mile goal</div>
+    <div class="stat-bar" id="sb1" style="background:var(--accent);width:0%"></div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Runs Logged</div>
+    <div class="stat-val" style="color:var(--blue)">42</div>
+    <div class="stat-unit">running sessions</div>
+    <div class="stat-bar" id="sb2" style="background:var(--blue);width:0%"></div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Active Days</div>
+    <div class="stat-val" style="color:var(--purple)">52</div>
+    <div class="stat-unit">days with a workout</div>
+    <div class="stat-bar" id="sb3" style="background:var(--purple);width:0%"></div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-label">Mi/Week Needed</div>
+    <div class="stat-val" style="color:var(--orange)">23.3</div>
+    <div class="stat-unit">weekdays only</div>
+    <div class="stat-bar" id="sb4" style="background:var(--orange);width:0%"></div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="row-2 asym">
+    <div class="panel">
+      <div class="panel-hdr">
+        <div class="panel-title">Monthly Miles</div>
+        <div class="panel-tag">2024 – 2026</div>
+      </div>
+      <canvas id="cMonthly" height="200"></canvas>
+    </div>
+    <div class="panel">
+      <div class="panel-hdr">
+        <div class="panel-title">1,000 Mile Goal</div>
+        <div class="panel-tag">2026 Progress</div>
+      </div>
+      <div class="goal-inner">
+        <div class="ring-wrap">
+          <canvas id="cRing" width="130" height="130"></canvas>
+          <div class="ring-lbl">
+            <div class="ring-pct">11.4%</div>
+            <div class="ring-sub">done</div>
+          </div>
+        </div>
+        <div class="goal-rows">
+          <div class="goal-row"><span class="gr-name">Logged</span><span class="gr-val" style="color:var(--accent)">113.8 mi</span></div>
+          <div class="goal-row"><span class="gr-name">Remaining</span><span class="gr-val">886.2 mi</span></div>
+          <div class="goal-row"><span class="gr-name">Pace needed</span><span class="gr-val" style="color:var(--orange)">4.7 mi/day</span></div>
+          <div class="goal-row"><span class="gr-name">Current avg</span><span class="gr-val">1.7 mi/day</span></div>
+          <div class="goal-row"><span class="gr-name">Days tracked</span><span class="gr-val">68 / 365</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row-2">
+    <div class="panel">
+      <div class="panel-hdr">
+        <div class="panel-title">Weekly Running</div>
+        <div class="panel-tag">2026</div>
+      </div>
+      <div class="pace-pill"><div class="pace-dot"></div>Avg 11.7 mi/wk &nbsp;·&nbsp; Target 23.3 mi/wk</div>
+      <canvas id="cWeekly" height="180"></canvas>
+    </div>
+    <div class="panel">
+      <div class="panel-hdr">
+        <div class="panel-title">Top Exercises</div>
+        <div class="panel-tag">All-time sessions</div>
+      </div>
+      <div class="ex-list" id="exList"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="panel-title">2026 Ramp-Up Plan</div>
+      <div class="panel-tag">Weekdays only · Nov–Dec capped</div>
+    </div>
+    <div class="plan-scroll">
+      <table class="plan">
+        <thead><tr><th>Month</th><th>Phase</th><th>Mi/Day</th><th>Target</th><th>Progress</th></tr></thead>
+        <tbody id="planBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="foot-inner">
+    <span>Fitness Dashboard · <span class="fa">Sagar Patel</span></span>
+    <span>Source: WorkoutExport.csv · Chart.js</span>
+    <span>github.com/fitness-dashboard</span>
+  </div>
+</footer>
+
+<script>
+const MONTHLY_LABELS=['Jan 24','Feb 24','Mar 24','Apr 24','May 24','Jun 24','Jul 24','Aug 24','Sep 24','Oct 24','Nov 24','Dec 24','Jan 25','Feb 25','Mar 25','Apr 25','May 25','Jun 25','Jul 25','Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26'];
+const MONTHLY_VALUES=[72.7,38.9,64.4,17.0,27.3,19.5,29.7,36.7,64.5,57.8,35.7,47.0,23.4,39.4,39.2,46.9,35.4,14.1,45.3,29.0,64.5,57.8,35.7,47.0,48.4,49.5,15.8];
+const WEEKLY_LABELS=['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10'];
+const WEEKLY_VALUES=[2.1,17.0,22.6,6.7,10.8,15.7,7.3,15.6,12.7,3.2];
+const EXERCISES=[{name:'Barbell Shoulder Press',count:672},{name:'Running',count:404},{name:'Pull Up',count:370},{name:'Walking',count:315},{name:'Barbell Incline Bench',count:306},{name:'Dip',count:273},{name:'Back Squat',count:262},{name:'Cable Tricep Ext.',count:262}];
+const HEATMAP={"2026-01-02":{t:"walk",m:0},"2026-01-03":{t:"walk",m:0},"2026-01-07":{t:"both",m:2.1},"2026-01-08":{t:"lift",m:0},"2026-01-09":{t:"lift",m:0},"2026-01-10":{t:"walk",m:0},"2026-01-11":{t:"walk",m:0},"2026-01-12":{t:"run",m:2.4},"2026-01-13":{t:"run",m:8.8},"2026-01-14":{t:"run",m:0.1},"2026-01-15":{t:"run",m:3.4},"2026-01-16":{t:"both",m:2.3},"2026-01-18":{t:"walk",m:0},"2026-01-20":{t:"run",m:4.1},"2026-01-21":{t:"run",m:3.1},"2026-01-22":{t:"run",m:7.8},"2026-01-23":{t:"run",m:3.9},"2026-01-24":{t:"run",m:3.7},"2026-01-25":{t:"walk",m:0},"2026-01-26":{t:"lift",m:0},"2026-01-27":{t:"run",m:6.7},"2026-01-28":{t:"lift",m:0},"2026-01-31":{t:"walk",m:0},"2026-02-01":{t:"walk",m:0},"2026-02-02":{t:"walk",m:0},"2026-02-03":{t:"walk",m:0},"2026-02-04":{t:"run",m:3.3},"2026-02-05":{t:"run",m:4.3},"2026-02-06":{t:"both",m:3.3},"2026-02-09":{t:"run",m:4.9},"2026-02-10":{t:"run",m:3.2},"2026-02-11":{t:"both",m:4.0},"2026-02-12":{t:"both",m:3.6},"2026-02-16":{t:"run",m:4.0},"2026-02-18":{t:"both",m:3.2},"2026-02-19":{t:"both",m:0.1},"2026-02-20":{t:"lift",m:0},"2026-02-21":{t:"lift",m:0},"2026-02-22":{t:"run",m:4.3},"2026-02-23":{t:"run",m:7.2},"2026-02-24":{t:"run",m:0.1},"2026-02-25":{t:"both",m:0},"2026-02-26":{t:"both",m:0.1},"2026-02-27":{t:"run",m:4.0},"2026-03-01":{t:"walk",m:0},"2026-03-02":{t:"run",m:4.9},"2026-03-03":{t:"both",m:4.5},"2026-03-04":{t:"run",m:3.3},"2026-03-05":{t:"lift",m:0},"2026-03-06":{t:"both",m:0},"2026-03-07":{t:"walk",m:0},"2026-03-09":{t:"run",m:3.2}};
+const TODAY='2026-03-09';
+const PLAN=[{mo:'January',phase:'done',daily:'—',target:48.4,actual:48.4},{mo:'February',phase:'done',daily:'—',target:49.5,actual:49.5},{mo:'March',phase:'ramp',daily:'3.0',target:90.3,actual:15.8},{mo:'April',phase:'ramp',daily:'4.1',target:102.3,actual:null},{mo:'May',phase:'full',daily:'4.95',target:97.7,actual:null},{mo:'June',phase:'full',daily:'4.95',target:102.3,actual:null},{mo:'July',phase:'full',daily:'4.95',target:107.0,actual:null},{mo:'August',phase:'full',daily:'4.95',target:97.7,actual:null},{mo:'September',phase:'full',daily:'4.95',target:102.3,actual:null},{mo:'October',phase:'full',daily:'4.95',target:102.3,actual:null},{mo:'November',phase:'cap',daily:'—',target:50.0,actual:null},{mo:'December',phase:'cap',daily:'—',target:50.0,actual:null}];
+
+Chart.defaults.color='#6b7280';
+Chart.defaults.font.family="'DM Mono',monospace";
+Chart.defaults.font.size=10;
+const GRID='rgba(37,40,48,.8)';
+const TT={backgroundColor:'#1c2028',borderColor:'#252830',borderWidth:1,titleColor:'#e8eaf0',bodyColor:'#9ca3af',padding:10};
+
+new Chart(document.getElementById('cMonthly'),{type:'bar',data:{labels:MONTHLY_LABELS,datasets:[{data:MONTHLY_VALUES,backgroundColor:MONTHLY_LABELS.map(l=>l.includes('26')?'rgba(232,255,71,.85)':'rgba(56,189,248,.35)'),borderRadius:3,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>` ${c.raw.toFixed(1)} mi`}}},scales:{x:{grid:{color:GRID},ticks:{maxRotation:45,font:{size:9}}},y:{grid:{color:GRID},ticks:{callback:v=>v+' mi'},beginAtZero:true}},animation:{duration:1200,easing:'easeOutQuart'}}});
+
+new Chart(document.getElementById('cRing'),{type:'doughnut',data:{datasets:[{data:[113.8,886.2],backgroundColor:['rgba(232,255,71,.9)','rgba(37,40,48,.7)'],borderWidth:0,hoverOffset:4}]},options:{cutout:'72%',plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>c.dataIndex===0?' 113.8 mi done':' 886.2 mi left'}}},animation:{animateRotate:true,duration:1400,easing:'easeOutQuart'}}});
+
+new Chart(document.getElementById('cWeekly'),{type:'line',data:{labels:WEEKLY_LABELS,datasets:[{label:'Miles run',data:WEEKLY_VALUES,borderColor:'rgba(232,255,71,.9)',backgroundColor:'rgba(232,255,71,.08)',fill:true,tension:.4,pointBackgroundColor:'rgba(232,255,71,.9)',pointBorderColor:'#0a0c10',pointBorderWidth:2,pointRadius:5,pointHoverRadius:7,borderWidth:2},{label:'Target (23.3)',data:Array(WEEKLY_LABELS.length).fill(23.3),borderColor:'rgba(249,115,22,.5)',borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false}]},options:{responsive:true,plugins:{legend:{display:true,labels:{boxWidth:10,padding:14,color:'#9ca3af',font:{size:10}}},tooltip:{...TT,callbacks:{label:c=>` ${c.raw.toFixed(1)} mi`}}},scales:{x:{grid:{color:GRID}},y:{grid:{color:GRID},ticks:{callback:v=>v+' mi'},beginAtZero:true,max:30}},animation:{duration:1200,easing:'easeOutQuart'}}});
+
+const exColors=['rgba(232,255,71,.8)','rgba(56,189,248,.7)','rgba(167,139,250,.7)','rgba(74,222,128,.7)','rgba(249,115,22,.7)','rgba(56,189,248,.5)','rgba(167,139,250,.5)','rgba(232,255,71,.5)'];
+const exList=document.getElementById('exList');
+const maxEx=EXERCISES[0].count;
+EXERCISES.forEach((ex,i)=>{
+  const pct=(ex.count/maxEx*100).toFixed(1);
+  const row=document.createElement('div');row.className='ex-row';
+  row.innerHTML=`<div class="ex-name">${ex.name}</div><div class="ex-bar-wrap"><div class="ex-bar" data-pct="${pct}" style="width:0%;background:${exColors[i]||exColors[0]}"></div></div><div class="ex-count">${ex.count}</div>`;
+  exList.appendChild(row);
+});
+
+const MONTHS_CFG=[{name:'January',year:2026,month:1,days:31},{name:'February',year:2026,month:2,days:28},{name:'March',year:2026,month:3,days:31}];
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const TYPES={run:'Run',lift:'Strength',walk:'Walk',both:'Run + Strength'};
+function getCls(ds,d){if(ds>TODAY)return 'hm-empty';if(!d)return 'hm-rest';const{t,m}=d;if(t==='both')return 'hm-both';if(t==='lift')return 'hm-lift';if(t==='walk')return 'hm-walk';if(t==='run'){if(m>=6)return 'hm-run3';if(m>=3)return 'hm-run2';return 'hm-run1';}return 'hm-rest';}
+const hmWrap=document.getElementById('heatmap');
+const tt=document.getElementById('tt');
+MONTHS_CFG.forEach(({name,year,month,days})=>{
+  const block=document.createElement('div');block.className='heatmap-month';
+  const lbl=document.createElement('div');lbl.className='hm-month-name';lbl.textContent=name+' '+year;
+  block.appendChild(lbl);
+  const row=document.createElement('div');row.className='hm-row';
+  for(let d=1;d<=days;d++){
+    const ds=`${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const data=HEATMAP[ds];const cls=getCls(ds,data);const future=ds>TODAY;
+    const cell=document.createElement('div');cell.className=`hm-cell ${cls}`;
+    if(future)cell.style.opacity='0.12';
+    const dow=DAYS[new Date(ds).getDay()];
+    const tl=data?(TYPES[data.t]||'Workout'):'Rest day';
+    const ml=data&&data.m>0?` · ${data.m.toFixed(1)} mi`:'';
+    const tip=`${dow}, ${ds}  ·  ${future?'upcoming':tl+ml}`;
+    cell.title=tip;
+    cell.addEventListener('mouseenter',e=>{tt.textContent=tip;tt.style.display='block'});
+    cell.addEventListener('mousemove',e=>{tt.style.left=(e.clientX+12)+'px';tt.style.top=(e.clientY-32)+'px'});
+    cell.addEventListener('mouseleave',()=>{tt.style.display='none'});
+    row.appendChild(cell);
+  }
+  block.appendChild(row);hmWrap.appendChild(block);
+});
+
+const BADGE={done:'<span class="badge b-done">✓ Done</span>',ramp:'<span class="badge b-ramp">↑ Ramp</span>',full:'<span class="badge b-full">● Full</span>',cap:'<span class="badge b-cap">— Cap</span>'};
+const BCOL={done:'var(--green)',ramp:'#fbbf24',full:'var(--accent)',cap:'var(--blue)'};
+const tbody=document.getElementById('planBody');
+PLAN.forEach(r=>{
+  const pct=r.actual!==null?Math.min(r.actual/r.target*100,100).toFixed(0):0;
+  const aTd=r.actual!==null?`<span style="color:var(--text);font-weight:600">${r.actual.toFixed(1)}</span>`:`<span style="color:var(--muted)">—</span>`;
+  tbody.innerHTML+=`<tr><td style="color:var(--text);font-weight:500;white-space:nowrap">${r.mo}</td><td>${BADGE[r.phase]}</td><td style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--accent)">${r.daily}</td><td style="white-space:nowrap">${r.target.toFixed(1)} mi</td><td><div class="mini-bar-wrap">${aTd}<div class="mini-bar"><div class="mini-bar-fill" style="width:${pct}%;background:${BCOL[r.phase]}"></div></div></div></td></tr>`;
+});
+
+document.querySelectorAll('.stat-item').forEach((el,i)=>setTimeout(()=>el.classList.add('visible'),i*100));
+setTimeout(()=>{document.getElementById('sb1').style.width='11.4%';document.getElementById('sb2').style.width='42%';document.getElementById('sb3').style.width='52%';document.getElementById('sb4').style.width='75%';},400);
+const obs=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}}),{threshold:.08});
+document.querySelectorAll('.panel').forEach((el,i)=>{el.style.transitionDelay=`${i*.06}s`;obs.observe(el);});
+setTimeout(()=>document.querySelectorAll('.ex-bar').forEach(b=>{b.style.width=b.dataset.pct+'%';}),600);
+</script>
+</body>
+</html>
